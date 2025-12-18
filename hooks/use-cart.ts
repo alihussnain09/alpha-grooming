@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import type { CartItem } from "@/lib/types"
 
 const CART_KEY = "alpha-grooming-cart"
@@ -12,17 +12,21 @@ export function useCart() {
   useEffect(() => {
     const savedCart = localStorage.getItem(CART_KEY)
     if (savedCart) {
-      setCart(JSON.parse(savedCart))
+      try {
+        setCart(JSON.parse(savedCart))
+      } catch {
+        setCart([])
+      }
     }
     setLoading(false)
   }, [])
 
-  const saveCart = (items: CartItem[]) => {
+  const saveCart = useCallback((items: CartItem[]) => {
     setCart(items)
     localStorage.setItem(CART_KEY, JSON.stringify(items))
-  }
+  }, [])
 
-  const addToCart = (productId: string, quantity = 1) => {
+  const addToCart = useCallback((productId: string, quantity = 1) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.productId === productId)
       let newCart
@@ -33,28 +37,48 @@ export function useCart() {
       } else {
         newCart = [...prevCart, { productId, quantity }]
       }
-      saveCart(newCart)
+      localStorage.setItem(CART_KEY, JSON.stringify(newCart))
       return newCart
     })
-  }
+  }, [])
 
-  const removeFromCart = (productId: string) => {
-    const newCart = cart.filter((item) => item.productId !== productId)
-    saveCart(newCart)
-  }
+  const removeFromCart = useCallback((productId: string) => {
+    setCart((prevCart) => {
+      const newCart = prevCart.filter((item) => item.productId !== productId)
+      localStorage.setItem(CART_KEY, JSON.stringify(newCart))
+      return newCart
+    })
+  }, [])
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(productId)
+      setCart((prevCart) => {
+        const newCart = prevCart.filter((item) => item.productId !== productId)
+        localStorage.setItem(CART_KEY, JSON.stringify(newCart))
+        return newCart
+      })
     } else {
-      const newCart = cart.map((item) => (item.productId === productId ? { ...item, quantity } : item))
-      saveCart(newCart)
+      setCart((prevCart) => {
+        const newCart = prevCart.map((item) => 
+          item.productId === productId ? { ...item, quantity } : item
+        )
+        localStorage.setItem(CART_KEY, JSON.stringify(newCart))
+        return newCart
+      })
     }
-  }
+  }, [])
 
-  const clearCart = () => {
-    saveCart([])
-  }
+  const clearCart = useCallback(() => {
+    setCart([])
+    localStorage.setItem(CART_KEY, JSON.stringify([]))
+  }, [])
 
-  return { cart, loading, addToCart, removeFromCart, updateQuantity, clearCart }
+  return useMemo(() => ({ 
+    cart, 
+    loading, 
+    addToCart, 
+    removeFromCart, 
+    updateQuantity, 
+    clearCart 
+  }), [cart, loading, addToCart, removeFromCart, updateQuantity, clearCart])
 }

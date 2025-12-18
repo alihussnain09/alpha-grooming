@@ -34,9 +34,22 @@ const OrderSchema = new Schema(
       zipCode: { type: String, required: true },
     },
     paymentInfo: {
-      cardNumber: { type: String, required: true },
-      cardExpiry: { type: String, required: true },
-      cardCVC: { type: String, required: true },
+      cardNumber: { type: String },
+      cardExpiry: { type: String },
+      cardCVC: { type: String },
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["card", "stripe", "cod"],
+      default: "stripe",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed"],
+      default: "pending",
+    },
+    stripeSessionId: {
+      type: String,
     },
     items: [OrderItemSchema],
     subtotal: {

@@ -4,19 +4,21 @@ import Link from "next/link"
 import { useCart } from "@/hooks/use-cart"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Menu } from "lucide-react"
-import { useState } from "react"
+import { useState, memo, useMemo, useCallback } from "react"
 
-export function Navbar() {
+export const Navbar = memo(function Navbar() {
   const { cart } = useCart()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart])
+  
+  const toggleMenu = useCallback(() => setMobileMenuOpen(prev => !prev), [])
 
   return (
     <nav className="sticky top-0 z-50 bg-background border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2" prefetch={false}>
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">AG</span>
             </div>
@@ -24,16 +26,16 @@ export function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/products" className="text-foreground hover:text-primary transition">
+            <Link href="/products" className="text-foreground hover:text-primary transition" prefetch={false}>
               Products
             </Link>
-            <Link href="/guides" className="text-foreground hover:text-primary transition">
+            <Link href="/guides" className="text-foreground hover:text-primary transition" prefetch={false}>
               Guides
             </Link>
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="/cart" className="relative">
+            <Link href="/cart" className="relative" prefetch={false}>
               <Button variant="ghost" size="icon">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
@@ -44,7 +46,10 @@ export function Navbar() {
               </Button>
             </Link>
 
-            <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <button 
+              className="md:hidden" 
+              onClick={toggleMenu}
+            >
               <Menu className="w-5 h-5" />
             </button>
           </div>
@@ -52,10 +57,10 @@ export function Navbar() {
 
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 space-y-2">
-            <Link href="/products" className="block px-4 py-2 hover:bg-muted rounded">
+            <Link href="/products" className="block px-4 py-2 hover:bg-muted rounded" prefetch={false}>
               Products
             </Link>
-            <Link href="/guides" className="block px-4 py-2 hover:bg-muted rounded">
+            <Link href="/guides" className="block px-4 py-2 hover:bg-muted rounded" prefetch={false}>
               Guides
             </Link>
           </div>
@@ -63,4 +68,4 @@ export function Navbar() {
       </div>
     </nav>
   )
-}
+})

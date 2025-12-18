@@ -16,13 +16,11 @@ const nextConfig = {
       },
     ],
     // Image device sizes for responsive images
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
     // Minimize layout shift
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 31536000,
   },
-  // Enable SWC minification for better performance
-  swcMinify: true,
   // Compress output
   compress: true,
   // Enable strict mode for better React practices
@@ -34,7 +32,7 @@ const nextConfig = {
     // Optimize CSS
     optimizeCss: true,
     // Optimize package imports
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', '@stripe/stripe-js'],
   },
   // Headers for better caching and security
   async headers() {
@@ -54,6 +52,32 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
           },
         ],
       },

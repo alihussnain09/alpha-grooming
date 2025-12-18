@@ -108,7 +108,7 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-3xl font-bold">PKR {stats.totalRevenue.toFixed(2)}</p>
+                <p className="text-3xl font-bold">PKR {Math.round(stats.totalRevenue).toLocaleString()}</p>
               </div>
               <BarChart3 className="w-10 h-10 text-primary opacity-20" />
             </div>

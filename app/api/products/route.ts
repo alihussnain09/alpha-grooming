@@ -26,8 +26,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(products, {
         headers: {
-          // Cache at CDN for 60s, allow SWR for 5m
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       })
     } catch (dbError) {
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(products, {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       })
     }

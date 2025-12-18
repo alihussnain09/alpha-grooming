@@ -46,8 +46,8 @@ export default function CartPage() {
     return sum + (item.product?.price || 0) * item.quantity
   }, 0)
 
-  const tax = subtotal * 0.1
-  const shipping = subtotal > 10000 ? 0 : 300
+  const tax = subtotal * 0.05
+  const shipping = subtotal > 2000 ? 0 : 200
   const total = subtotal + tax + shipping
 
   if (loading) {
@@ -110,7 +110,7 @@ export default function CartPage() {
                           <h3 className="font-semibold hover:text-primary transition">{item.product.name}</h3>
                         </Link>
                         <p className="text-sm text-muted-foreground">{item.product.category}</p>
-                        <p className="text-lg font-bold text-primary mt-2">PKR {item.product.price.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-primary mt-2">PKR {item.product.price.toLocaleString()}</p>
                       </div>
 
                       <div className="flex flex-col items-end gap-4">
@@ -158,26 +158,26 @@ export default function CartPage() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-semibold">PKR {subtotal.toFixed(2)}</span>
+                  <span className="font-semibold">PKR {subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax (10%)</span>
-                  <span className="font-semibold">PKR {tax.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Tax (5%)</span>
+                  <span className="font-semibold">PKR {Math.round(tax).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
                   <span className="font-semibold">
-                    {shipping === 0 ? <span className="text-green-600">Free</span> : `PKR ${shipping.toFixed(2)}`}
+                    {shipping === 0 ? <span className="text-green-600">Free</span> : `PKR ${shipping.toLocaleString()}`}
                   </span>
                 </div>
               </div>
 
-              {shipping > 0 && <p className="text-xs text-muted-foreground mb-4">Free shipping on orders over PKR 10,000</p>}
+              {shipping > 0 && <p className="text-xs text-muted-foreground mb-4">Free shipping on orders over PKR 2,000</p>}
 
               <div className="border-t border-border pt-4 mb-6">
                 <div className="flex justify-between">
                   <span className="font-bold text-lg">Total</span>
-                  <span className="font-bold text-lg text-primary">PKR {total.toFixed(2)}</span>
+                  <span className="font-bold text-lg text-primary">PKR {Math.round(total).toLocaleString()}</span></span>
                 </div>
               </div>
 

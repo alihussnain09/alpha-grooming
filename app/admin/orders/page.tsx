@@ -135,7 +135,7 @@ export default function AdminOrdersPage() {
                         {order.customerInfo.firstName} {order.customerInfo.lastName}
                       </td>
                       <td className="px-6 py-4 text-sm">{order.items.length} items</td>
-                      <td className="px-6 py-4 text-sm font-semibold">PKR {order.total.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm font-semibold">PKR {order.total.toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm">
                         <div className="text-xs">
                           <div className="font-mono">****{(order as any).paymentInfo?.cardNumber?.slice(-4) || "****"}</div>

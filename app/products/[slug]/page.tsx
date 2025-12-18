@@ -199,7 +199,7 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="mb-6">
-              <span className="text-4xl font-bold text-primary">PKR {product.price.toFixed(2)}</span>
+              <span className="text-4xl font-bold text-primary">PKR {product.price.toLocaleString()}</span>
             </div>
 
             {/* Stock Status */}

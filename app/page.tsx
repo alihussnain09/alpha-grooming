@@ -12,19 +12,36 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative h-96 bg-gradient-to-r from-primary/10 to-primary/5 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
-          <div className="flex-1">
-            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">Premium Men's Grooming</h1>
-            <p className="text-lg text-muted-foreground mb-8 max-w-md">
+      <section className="relative min-h-[500px] bg-gradient-to-br from-primary/20 via-primary/10 to-background overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center py-20">
+          <div className="flex-1 relative z-10">
+            <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-6">
+              🇵🇰 Made in Pakistan
+            </span>
+            <h1 className="text-4xl sm:text-6xl font-bold text-foreground mb-6 leading-tight">
+              Premium Men's <br />
+              <span className="text-primary">Grooming Products</span>
+            </h1>
+            <p className="text-lg text-muted-foreground mb-8 max-w-lg">
               Elevate your grooming routine with Alpha Grooming's premium collection of beard oils, face washes, and
-              hair care products.
+              hair care products. Quality you can trust.
             </p>
             <Link href="/products">
-              <Button size="lg" className="gap-2">
+              <Button size="lg" className="gap-2 text-lg px-10 py-6">
                 Shop Now
               </Button>
             </Link>
+            <div className="flex items-center gap-8 mt-10 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✓</span>
+                <span>Free Shipping over PKR 2000</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✓</span>
+                <span>100% Natural Ingredients</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -32,19 +49,23 @@ export default function Home() {
       
 
       {/* Featured Categories */}
-      <section className="py-16 bg-background">
+      <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold mb-12 text-center">Shop by Category</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Shop by Category</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">Explore our carefully curated collections designed specifically for the modern man</p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { name: "Beard Care", icon: "🧔", slug: "beard-care" },
-              { name: "Face Care", icon: "✨", slug: "face-care" },
-              { name: "Hair Care", icon: "💇", slug: "hair-care" },
+              { name: "Beard Care", icon: "🧔", slug: "beard-care", desc: "Oils, balms & serums" },
+              { name: "Face Care", icon: "✨", slug: "face-care", desc: "Wash, cream & more" },
+              { name: "Hair Care", icon: "💇", slug: "hair-care", desc: "Oils, wax & shampoo" },
             ].map((category) => (
               <Link key={category.name} href={`/products/category/${category.slug}`}>
-                <div className="bg-card border border-border rounded-lg p-8 text-center hover:shadow-lg transition-shadow cursor-pointer">
-                  <div className="text-5xl mb-4">{category.icon}</div>
-                  <h3 className="text-xl font-semibold">{category.name}</h3>
+                <div className="bg-card border border-border rounded-xl p-8 text-center hover:shadow-xl hover:border-primary/50 transition-all duration-300 cursor-pointer group">
+                  <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">{category.icon}</div>
+                  <h3 className="text-xl font-semibold mb-2">{category.name}</h3>
+                  <p className="text-sm text-muted-foreground">{category.desc}</p>
                 </div>
               </Link>
             ))}
@@ -52,13 +73,33 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Features Section */}
+      <section className="py-16 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+            {[
+              { icon: "🚚", title: "Free Shipping", desc: "Orders over PKR 2000" },
+              { icon: "💯", title: "100% Natural", desc: "Premium ingredients" },
+              { icon: "🔒", title: "Secure Payment", desc: "Stripe protected" },
+              { icon: "📞", title: "24/7 Support", desc: "Always here to help" },
+            ].map((feature, i) => (
+              <div key={i} className="p-6">
+                <div className="text-4xl mb-3">{feature.icon}</div>
+                <h3 className="font-semibold mb-1">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-16 bg-primary text-primary-foreground">
+      <section className="py-20 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Join Our Community</h2>
-          <p className="text-lg mb-8 opacity-90">Get grooming tips, product recommendations, and exclusive offers</p>
+          <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">Get grooming tips, product recommendations, and exclusive offers. Be the first to know about new arrivals!</p>
           <Link href="/guides">
-            <Button variant="secondary" size="lg">
+            <Button variant="secondary" size="lg" className="px-8">
               Read Grooming Guides
             </Button>
           </Link>

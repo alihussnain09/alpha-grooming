@@ -59,7 +59,12 @@ export default function AdminProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/products")
+      const response = await fetch(`/api/products?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      })
       if (response.ok) {
         const data = await response.json()
         setProducts(data)
@@ -716,7 +721,7 @@ export default function AdminProductsPage() {
                     <tr key={product._id || product.id} className="border-b border-border hover:bg-muted/50 transition">
                       <td className="px-6 py-4 text-sm">{product.name}</td>
                       <td className="px-6 py-4 text-sm">{product.category}</td>
-                      <td className="px-6 py-4 text-sm font-semibold">PKR {product.price.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm font-semibold">PKR {product.price.toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm">{product.stock}</td>
                       <td className="px-6 py-4 text-sm">
                         <div className="flex gap-2">

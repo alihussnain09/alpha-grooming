@@ -7,60 +7,60 @@ import { useCart } from "@/hooks/use-cart"
 import { Star, ShoppingCart } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, memo, useCallback } from "react"
 
 interface ProductCardProps {
   product: Product
   priority?: boolean
 }
 
-export function ProductCard({ product, priority = false }: ProductCardProps) {
+export const ProductCard = memo(function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addToCart } = useCart()
   const [added, setAdded] = useState(false)
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     const productId = ((product as any)._id || product.id)?.toString()
     if (productId) {
       addToCart(productId, 1)
       setAdded(true)
       setTimeout(() => setAdded(false), 2000)
     }
-  }
+  }, [product, addToCart])
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <Link href={`/products/${product.slug}`}>
+      <Link href={`/products/${product.slug}`} prefetch={false}>
         <div className="relative h-48 bg-muted overflow-hidden">
           <Image
             src={product.image || "/placeholder.svg"}
             alt={product.name}
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover hover:scale-105 transition-transform"
             priority={priority}
-            fetchPriority={priority ? "high" : "auto"}
-            loading={priority ? "eager" : undefined}
+            loading={priority ? "eager" : "lazy"}
           />
         </div>
       </Link>
 
       <div className="p-4">
-        <Link href={`/products/${product.slug}`}>
+        <Link href={`/products/${product.slug}`} prefetch={false}>
           <h3 className="font-semibold text-lg hover:text-primary transition line-clamp-2">{product.name}</h3>
         </Link>
 
-        <div 
-          className="text-sm text-muted-foreground line-clamp-2 mt-1 prose-sm"
-          dangerouslySetInnerHTML={{ __html: product.description }}
-        />
+        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+          {product.description.replace(/<[^>]*>/g, '').substring(0, 100)}
+        </p>
 
         <div className="flex items-center gap-1 mt-2">
-          <div className="flex items-center">
+          <div className="flex items-center" aria-label={`Rating: ${product.rating} out of 5 stars`}>
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
                 className={`w-4 h-4 ${
                   i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
                 }`}
+                aria-hidden="true"
               />
             ))}
           </div>
@@ -68,9 +68,9 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         </div>
 
         <div className="flex items-center justify-between mt-4">
-          <span className="text-xl font-bold text-primary">PKR {product.price.toFixed(2)}</span>
+          <span className="text-xl font-bold text-primary">PKR {product.price.toLocaleString()}</span>
           <Button size="sm" onClick={handleAddToCart} variant={added ? "default" : "outline"} className="gap-2">
-            <ShoppingCart className="w-4 h-4" />
+            <ShoppingCart className="w-4 h-4" aria-hidden="true" />
             {added ? "Added" : "Add"}
           </Button>
         </div>
@@ -82,4 +82,4 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       </div>
     </Card>
   )
-}
+})

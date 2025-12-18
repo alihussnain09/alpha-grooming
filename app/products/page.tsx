@@ -17,7 +17,7 @@ export default function ProductsPage() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
-  const [priceRange, setPriceRange] = useState([0, 500])
+  const [priceRange, setPriceRange] = useState([0, 10000])
   const [sortBy, setSortBy] = useState("featured")
   const [loading, setLoading] = useState(true)
 
@@ -26,9 +26,15 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products")
+        const response = await fetch(`/api/products?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        })
         if (response.ok) {
           const data = await response.json()
+          console.log("Fetched products:", data.length)
           setProducts(data)
         }
       } catch (error) {
@@ -143,14 +149,15 @@ export default function ProductsPage() {
                   <input
                     type="range"
                     min="0"
-                    max="500"
+                    max="10000"
+                    step="100"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([priceRange[0], Number.parseInt(e.target.value)])}
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm">
-                    <span>${priceRange[0]}</span>
-                    <span>${priceRange[1]}</span>
+                    <span>PKR {priceRange[0]}</span>
+                    <span>PKR {priceRange[1]}</span>
                   </div>
                 </div>
               </div>

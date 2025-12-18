@@ -9,6 +9,9 @@ import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
+import { loadStripe } from "@stripe/stripe-js"
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -16,7 +19,6 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
   const [productsLoading, setProductsLoading] = useState(true)
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -26,9 +28,6 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     zipCode: "",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCVC: "",
   })
 
   useEffect(() => {
@@ -66,159 +65,63 @@ export default function CheckoutPage() {
   const shipping = subtotal > 10000 ? 0 : 300
   const total = subtotal + tax + shipping
 
-  const validateCardNumber = (value: string) => {
-    // Remove spaces and dashes
-    const cleaned = value.replace(/[\s-]/g, "")
-    // Check if it contains only digits
-    if (!/^\d*$/.test(cleaned)) return false
-    // Check length (13-19 digits for most cards)
-    if (cleaned.length > 19) return false
-    return true
-  }
-
-  const validateCardExpiry = (value: string) => {
-    // Remove non-digits except slash
-    const cleaned = value.replace(/[^\d/]/g, "")
-    // Check format MM/YY
-    if (!/^\d{0,2}\/?\d{0,2}$/.test(cleaned)) return false
-    if (cleaned.length > 5) return false
-    return true
-  }
-
-  const validateCVC = (value: string) => {
-    // Only digits, max 4 characters
-    if (!/^\d*$/.test(value)) return false
-    if (value.length > 4) return false
-    return true
-  }
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    let isValid = true
-    let newValue = value
-    const newErrors = { ...errors }
-
-    // Validate card fields
-    if (name === "cardNumber") {
-      const cleaned = value.replace(/[\s-]/g, "")
-      if (!validateCardNumber(value)) {
-        newErrors.cardNumber = "Invalid card number. Only digits allowed (max 19)."
-        isValid = false
-      } else {
-        delete newErrors.cardNumber
-        // Format card number with spaces every 4 digits
-        newValue = cleaned.replace(/(\d{4})(?=\d)/g, "$1 ")
-      }
-    } else if (name === "cardExpiry") {
-      if (!validateCardExpiry(value)) {
-        newErrors.cardExpiry = "Invalid expiry. Use MM/YY format."
-        isValid = false
-      } else {
-        delete newErrors.cardExpiry
-        // Auto-format MM/YY
-        const cleaned = value.replace(/\D/g, "")
-        if (cleaned.length >= 2) {
-          newValue = cleaned.slice(0, 2) + "/" + cleaned.slice(2, 4)
-        } else {
-          newValue = cleaned
-        }
-      }
-    } else if (name === "cardCVC") {
-      if (!validateCVC(value)) {
-        newErrors.cardCVC = "Invalid CVC. Only 3-4 digits allowed."
-        isValid = false
-      } else {
-        delete newErrors.cardCVC
-      }
-    }
-
-    setErrors(newErrors)
-    if (isValid || name === "cardExpiry" || name === "cardNumber") {
-      setFormData((prev) => ({ ...prev, [name]: newValue }))
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Validate card details before submission
-    const newErrors: Record<string, string> = {}
-    const cardNumberClean = formData.cardNumber.replace(/\s/g, "")
-    
-    if (cardNumberClean.length < 13 || cardNumberClean.length > 19) {
-      newErrors.cardNumber = "Card number must be 13-19 digits"
-    }
-    if (!/^\d{2}\/\d{2}$/.test(formData.cardExpiry)) {
-      newErrors.cardExpiry = "Invalid expiry format. Use MM/YY"
-    } else {
-      const [month, year] = formData.cardExpiry.split("/")
-      const currentYear = new Date().getFullYear() % 100
-      const currentMonth = new Date().getMonth() + 1
-      if (parseInt(month) < 1 || parseInt(month) > 12) {
-        newErrors.cardExpiry = "Invalid month"
-      } else if (parseInt(year) < currentYear || (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
-        newErrors.cardExpiry = "Card has expired"
-      }
-    }
-    if (formData.cardCVC.length < 3 || formData.cardCVC.length > 4) {
-      newErrors.cardCVC = "CVC must be 3-4 digits"
-    }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city) {
+      alert("Please fill in all required fields")
       return
     }
 
     setLoading(true)
 
     try {
-      // Prepare order data
-      const orderData = {
-        customerInfo: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-        },
-        paymentInfo: {
-          cardNumber: cardNumberClean,
-          cardExpiry: formData.cardExpiry,
-          cardCVC: formData.cardCVC,
-        },
-        items: cartItems.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.product?.price || 0,
-          name: item.product?.name || "",
-        })),
-        subtotal,
-        tax,
-        shipping,
-        total,
+      const stripe = await stripePromise
+
+      if (!stripe) {
+        throw new Error("Stripe failed to load")
       }
 
-      // Save order to database
-      const response = await fetch("/api/orders", {
+      // Prepare items for Stripe checkout
+      const items = cartItems.map((item) => ({
+        productId: item.productId,
+        name: item.product?.name || "",
+        price: item.product?.price || 0,
+        quantity: item.quantity,
+        image: item.product?.image || "",
+      }))
+
+      const response = await fetch("/api/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items,
+          customerInfo: formData,
+        }),
       })
 
-      if (response.ok) {
-        clearCart()
-        router.push("/order-confirmation")
-      } else {
-        const errorData = await response.json()
-        alert(errorData.error || "Failed to place order. Please try again.")
-        setLoading(false)
+      const { sessionId, url, error } = await response.json()
+
+      if (error) {
+        throw new Error(error)
       }
-    } catch (error) {
-      console.error("Error placing order:", error)
-      alert("An error occurred. Please try again.")
+
+      if (url) {
+        // Redirect to Stripe Checkout
+        window.location.href = url
+      } else {
+        throw new Error("No checkout URL returned")
+      }
+    } catch (error: any) {
+      console.error("Checkout error:", error)
+      alert(error.message || "Failed to process checkout. Please try again.")
       setLoading(false)
     }
   }
@@ -344,58 +247,25 @@ export default function CheckoutPage() {
               <Card className="p-6">
                 <h2 className="text-xl font-bold mb-4">Payment Information</h2>
                 <div className="space-y-4">
-                  <div>
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      placeholder="Card Number (e.g., 1234 5678 9012 3456)"
-                      value={formData.cardNumber}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                        errors.cardNumber ? "border-red-500 focus:ring-red-500" : "border-border focus:ring-primary"
-                      }`}
-                      required
-                      maxLength={23}
-                    />
-                    {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber}</p>}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-100">Secure Payment with Stripe</h3>
+                    </div>
+                    <p className="text-sm text-blue-800 dark:text-blue-300">
+                      Your payment information will be processed securely through Stripe. You'll be redirected to complete your payment.
+                    </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <input
-                        type="text"
-                        name="cardExpiry"
-                        placeholder="MM/YY"
-                        value={formData.cardExpiry}
-                        onChange={handleInputChange}
-                        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 w-full ${
-                          errors.cardExpiry ? "border-red-500 focus:ring-red-500" : "border-border focus:ring-primary"
-                        }`}
-                        required
-                        maxLength={5}
-                      />
-                      {errors.cardExpiry && <p className="text-red-500 text-xs mt-1">{errors.cardExpiry}</p>}
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        name="cardCVC"
-                        placeholder="CVC"
-                        value={formData.cardCVC}
-                        onChange={handleInputChange}
-                        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 w-full ${
-                          errors.cardCVC ? "border-red-500 focus:ring-red-500" : "border-border focus:ring-primary"
-                        }`}
-                        required
-                        maxLength={4}
-                      />
-                      {errors.cardCVC && <p className="text-red-500 text-xs mt-1">{errors.cardCVC}</p>}
-                    </div>
+                  <div className="flex gap-2 justify-center pt-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" className="h-8" />
                   </div>
                 </div>
               </Card>
 
               <Button type="submit" size="lg" className="w-full" disabled={loading}>
-                {loading ? "Processing..." : "Place Order"}
+                {loading ? "Redirecting to Stripe..." : "Proceed to Payment"}
               </Button>
             </form>
           </div>
@@ -410,21 +280,21 @@ export default function CheckoutPage() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>PKR {subtotal.toFixed(2)}</span>
+                  <span>PKR {subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax</span>
-                  <span>PKR {tax.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Tax (5%)</span>
+                  <span>PKR {Math.round(tax).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span>{shipping === 0 ? "Free" : `PKR ${shipping.toFixed(2)}`}</span>
+                  <span>{shipping === 0 ? <span className="text-green-600">Free</span> : `PKR ${shipping.toLocaleString()}`}</span>
                 </div>
               </div>
               <div className="border-t border-border pt-4">
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span className="text-primary">PKR {total.toFixed(2)}</span>
+                  <span className="text-primary">PKR {Math.round(total).toLocaleString()}</span>
                 </div>
               </div>
             </Card>
