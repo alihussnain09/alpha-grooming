@@ -14,8 +14,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       }
     }
 
-    const title = `${product.name} – Buy Online | Alpha Grooming`
-    const description = product.description?.slice(0, 155) || 'Premium men\'s grooming product at Alpha Grooming.'
+    // Use custom SEO fields if available, otherwise fallback to defaults
+    const title = product.metaTitle || `${product.name} – Buy Online | Alpha Grooming`
+    const description = product.metaDescription || product.description?.slice(0, 155) || 'Premium men\'s grooming product at Alpha Grooming.'
     const url = `https://www.alphagrooming.com/products/${slug}`
     const image = product.image || '/og-image.svg'
 
@@ -23,6 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       alternates: { canonical: url },
       title,
       description,
+      keywords: product.metaKeywords || undefined,
       openGraph: {
         title,
         description,

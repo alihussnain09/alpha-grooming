@@ -33,6 +33,11 @@ const OrderSchema = new Schema(
       state: { type: String, required: true },
       zipCode: { type: String, required: true },
     },
+    paymentInfo: {
+      cardNumber: { type: String, required: true },
+      cardExpiry: { type: String, required: true },
+      cardCVC: { type: String, required: true },
+    },
     items: [OrderItemSchema],
     subtotal: {
       type: Number,

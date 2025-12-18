@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { RichTextEditor } from "@/components/ui/rich-text-editor"
 import { Trash2, Plus, ArrowLeft, Edit } from "lucide-react"
 
 interface Product {
@@ -14,6 +15,8 @@ interface Product {
   name: string
   slug?: string
   description: string
+  metaTitle?: string
+  metaDescription?: string
   price: number
   category: string
   stock: number
@@ -31,7 +34,8 @@ export default function AdminProductsPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    price: "",
+    metaTitle: "",
+    metaDescription: "",    metaKeywords: "",    price: "",
     category: "Beard Care",
     stock: "",
     image: "",
@@ -41,6 +45,7 @@ export default function AdminProductsPage() {
   const [uploading, setUploading] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [showEditForm, setShowEditForm] = useState(false)
+  const [generatingSEO, setGeneratingSEO] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem("admin-token")
@@ -92,7 +97,49 @@ export default function AdminProductsPage() {
       reader.onerror = (error) => reject(error)
     })
   }
+  const handleGenerateSEO = async () => {
+    if (!formData.name || !formData.description) {
+      alert("Please enter product name and description first")
+      return
+    }
 
+    setGeneratingSEO(true)
+    try {
+      const response = await fetch("/api/generate-seo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productName: formData.name,
+          productDescription: formData.description,
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        console.error("API Error:", result)
+        throw new Error(result.error || "Failed to generate SEO content")
+      }
+
+      console.log("Generated SEO:", result)
+      
+      setFormData((prev) => ({
+        ...prev,
+        metaTitle: result.metaTitle || prev.metaTitle,
+        metaDescription: result.metaDescription || prev.metaDescription,
+        metaKeywords: result.metaKeywords || prev.metaKeywords,
+      }))
+
+      alert("SEO content generated successfully!")
+    } catch (error: any) {
+      console.error("Error generating SEO:", error)
+      alert(`Failed to generate SEO: ${error.message || 'Please try again.'}`)
+    } finally {
+      setGeneratingSEO(false)
+    }
+  }
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     setUploading(true)
@@ -112,6 +159,8 @@ export default function AdminProductsPage() {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,
+          metaTitle: formData.metaTitle,
+          metaDescription: formData.metaDescription,
           price: Number.parseFloat(formData.price),
           category: formData.category,
           stock: Number.parseInt(formData.stock),
@@ -130,6 +179,8 @@ export default function AdminProductsPage() {
         setFormData({
           name: "",
           description: "",
+          metaTitle: "",
+          metaDescription: "",
           price: "",
           category: "Beard Care",
           stock: "",
@@ -157,6 +208,9 @@ export default function AdminProductsPage() {
     setFormData({
       name: product.name,
       description: product.description,
+      metaTitle: product.metaTitle || "",
+      metaDescription: product.metaDescription || "",
+      metaKeywords: product.metaKeywords || "",
       price: product.price.toString(),
       category: product.category,
       stock: product.stock.toString(),
@@ -190,6 +244,8 @@ export default function AdminProductsPage() {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,
+          metaTitle: formData.metaTitle,
+          metaDescription: formData.metaDescription,
           price: Number.parseFloat(formData.price),
           category: formData.category,
           stock: Number.parseInt(formData.stock),
@@ -208,6 +264,8 @@ export default function AdminProductsPage() {
         setFormData({
           name: "",
           description: "",
+          metaTitle: "",
+          metaDescription: "",
           price: "",
           category: "Beard Care",
           stock: "",
@@ -347,15 +405,73 @@ export default function AdminProductsPage() {
                   required
                 />
               </div>
-              <textarea
-                name="description"
-                placeholder="Product Description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                rows={3}
-                required
-              />
+              <div>
+                <label className="block text-sm font-medium mb-2">Product Description</label>
+                <RichTextEditor
+                  value={formData.description}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+                  placeholder="Enter product description with rich formatting..."
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium">SEO Metadata</label>
+                  <Button
+                    type="button"
+                    onClick={handleGenerateSEO}
+                    disabled={generatingSEO || !formData.name || !formData.description}
+                    className="text-sm"
+                  >
+                    {generatingSEO ? "Generating..." : "✨ Auto-Generate SEO"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Meta Title</label>
+                    <input
+                      type="text"
+                      name="metaTitle"
+                      placeholder="Enter meta title for SEO"
+                      value={formData.metaTitle}
+                      onChange={handleInputChange}
+                      maxLength={60}
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.metaTitle.length}/60 characters
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Meta Description</label>
+                    <textarea
+                      name="metaDescription"
+                      placeholder="Enter meta description for SEO"
+                      value={formData.metaDescription}
+                      onChange={handleInputChange}
+                      maxLength={160}
+                      rows={3}
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.metaDescription.length}/160 characters
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Meta Keywords</label>
+                  <input
+                    type="text"
+                    name="metaKeywords"
+                    placeholder="Enter keywords separated by commas (e.g., beard oil, grooming, men's care)"
+                    value={formData.metaKeywords}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Separate keywords with commas
+                  </p>
+                </div>
+              </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium">Product Image</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -448,15 +564,73 @@ export default function AdminProductsPage() {
                   required
                 />
               </div>
-              <textarea
-                name="description"
-                placeholder="Product Description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                rows={3}
-                required
-              />
+              <div>
+                <label className="block text-sm font-medium mb-2">Product Description</label>
+                <RichTextEditor
+                  value={formData.description}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+                  placeholder="Enter product description with rich formatting..."
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium">SEO Metadata</label>
+                  <Button
+                    type="button"
+                    onClick={handleGenerateSEO}
+                    disabled={generatingSEO || !formData.name || !formData.description}
+                    className="text-sm"
+                  >
+                    {generatingSEO ? "Generating..." : "✨ Auto-Generate SEO"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Meta Title</label>
+                    <input
+                      type="text"
+                      name="metaTitle"
+                      placeholder="Enter meta title for SEO"
+                      value={formData.metaTitle}
+                      onChange={handleInputChange}
+                      maxLength={60}
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.metaTitle.length}/60 characters
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Meta Description</label>
+                    <textarea
+                      name="metaDescription"
+                      placeholder="Enter meta description for SEO"
+                      value={formData.metaDescription}
+                      onChange={handleInputChange}
+                      maxLength={160}
+                      rows={3}
+                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.metaDescription.length}/160 characters
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Meta Keywords</label>
+                  <input
+                    type="text"
+                    name="metaKeywords"
+                    placeholder="Enter keywords separated by commas (e.g., beard oil, grooming, men's care)"
+                    value={formData.metaKeywords}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Separate keywords with commas
+                  </p>
+                </div>
+              </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium">Product Image</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -577,3 +751,4 @@ export default function AdminProductsPage() {
     </div>
   )
 }
+

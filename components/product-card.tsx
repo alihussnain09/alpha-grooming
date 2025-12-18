@@ -48,7 +48,10 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           <h3 className="font-semibold text-lg hover:text-primary transition line-clamp-2">{product.name}</h3>
         </Link>
 
-        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{product.description}</p>
+        <div 
+          className="text-sm text-muted-foreground line-clamp-2 mt-1 prose-sm"
+          dangerouslySetInnerHTML={{ __html: product.description }}
+        />
 
         <div className="flex items-center gap-1 mt-2">
           <div className="flex items-center">

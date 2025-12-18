@@ -4,6 +4,9 @@ export interface Product {
   name: string
   slug: string
   description: string
+  metaTitle?: string
+  metaDescription?: string
+  metaKeywords?: string
   price: number
   category: string
   image: string

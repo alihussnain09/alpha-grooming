@@ -16,6 +16,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
   const [productsLoading, setProductsLoading] = useState(true)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -65,13 +66,109 @@ export default function CheckoutPage() {
   const shipping = subtotal > 10000 ? 0 : 300
   const total = subtotal + tax + shipping
 
+  const validateCardNumber = (value: string) => {
+    // Remove spaces and dashes
+    const cleaned = value.replace(/[\s-]/g, "")
+    // Check if it contains only digits
+    if (!/^\d*$/.test(cleaned)) return false
+    // Check length (13-19 digits for most cards)
+    if (cleaned.length > 19) return false
+    return true
+  }
+
+  const validateCardExpiry = (value: string) => {
+    // Remove non-digits except slash
+    const cleaned = value.replace(/[^\d/]/g, "")
+    // Check format MM/YY
+    if (!/^\d{0,2}\/?\d{0,2}$/.test(cleaned)) return false
+    if (cleaned.length > 5) return false
+    return true
+  }
+
+  const validateCVC = (value: string) => {
+    // Only digits, max 4 characters
+    if (!/^\d*$/.test(value)) return false
+    if (value.length > 4) return false
+    return true
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    let isValid = true
+    let newValue = value
+    const newErrors = { ...errors }
+
+    // Validate card fields
+    if (name === "cardNumber") {
+      const cleaned = value.replace(/[\s-]/g, "")
+      if (!validateCardNumber(value)) {
+        newErrors.cardNumber = "Invalid card number. Only digits allowed (max 19)."
+        isValid = false
+      } else {
+        delete newErrors.cardNumber
+        // Format card number with spaces every 4 digits
+        newValue = cleaned.replace(/(\d{4})(?=\d)/g, "$1 ")
+      }
+    } else if (name === "cardExpiry") {
+      if (!validateCardExpiry(value)) {
+        newErrors.cardExpiry = "Invalid expiry. Use MM/YY format."
+        isValid = false
+      } else {
+        delete newErrors.cardExpiry
+        // Auto-format MM/YY
+        const cleaned = value.replace(/\D/g, "")
+        if (cleaned.length >= 2) {
+          newValue = cleaned.slice(0, 2) + "/" + cleaned.slice(2, 4)
+        } else {
+          newValue = cleaned
+        }
+      }
+    } else if (name === "cardCVC") {
+      if (!validateCVC(value)) {
+        newErrors.cardCVC = "Invalid CVC. Only 3-4 digits allowed."
+        isValid = false
+      } else {
+        delete newErrors.cardCVC
+      }
+    }
+
+    setErrors(newErrors)
+    if (isValid || name === "cardExpiry" || name === "cardNumber") {
+      setFormData((prev) => ({ ...prev, [name]: newValue }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate card details before submission
+    const newErrors: Record<string, string> = {}
+    const cardNumberClean = formData.cardNumber.replace(/\s/g, "")
+    
+    if (cardNumberClean.length < 13 || cardNumberClean.length > 19) {
+      newErrors.cardNumber = "Card number must be 13-19 digits"
+    }
+    if (!/^\d{2}\/\d{2}$/.test(formData.cardExpiry)) {
+      newErrors.cardExpiry = "Invalid expiry format. Use MM/YY"
+    } else {
+      const [month, year] = formData.cardExpiry.split("/")
+      const currentYear = new Date().getFullYear() % 100
+      const currentMonth = new Date().getMonth() + 1
+      if (parseInt(month) < 1 || parseInt(month) > 12) {
+        newErrors.cardExpiry = "Invalid month"
+      } else if (parseInt(year) < currentYear || (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+        newErrors.cardExpiry = "Card has expired"
+      }
+    }
+    if (formData.cardCVC.length < 3 || formData.cardCVC.length > 4) {
+      newErrors.cardCVC = "CVC must be 3-4 digits"
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -86,6 +183,11 @@ export default function CheckoutPage() {
           city: formData.city,
           state: formData.state,
           zipCode: formData.zipCode,
+        },
+        paymentInfo: {
+          cardNumber: cardNumberClean,
+          cardExpiry: formData.cardExpiry,
+          cardCVC: formData.cardCVC,
         },
         items: cartItems.map((item) => ({
           productId: item.productId,
@@ -242,34 +344,52 @@ export default function CheckoutPage() {
               <Card className="p-6">
                 <h2 className="text-xl font-bold mb-4">Payment Information</h2>
                 <div className="space-y-4">
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    placeholder="Card Number"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      name="cardNumber"
+                      placeholder="Card Number (e.g., 1234 5678 9012 3456)"
+                      value={formData.cardNumber}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                        errors.cardNumber ? "border-red-500 focus:ring-red-500" : "border-border focus:ring-primary"
+                      }`}
+                      required
+                      maxLength={23}
+                    />
+                    {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber}</p>}
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="cardExpiry"
-                      placeholder="MM/YY"
-                      value={formData.cardExpiry}
-                      onChange={handleInputChange}
-                      className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      required
-                    />
-                    <input
-                      type="text"
-                      name="cardCVC"
-                      placeholder="CVC"
-                      value={formData.cardCVC}
-                      onChange={handleInputChange}
-                      className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      required
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        name="cardExpiry"
+                        placeholder="MM/YY"
+                        value={formData.cardExpiry}
+                        onChange={handleInputChange}
+                        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 w-full ${
+                          errors.cardExpiry ? "border-red-500 focus:ring-red-500" : "border-border focus:ring-primary"
+                        }`}
+                        required
+                        maxLength={5}
+                      />
+                      {errors.cardExpiry && <p className="text-red-500 text-xs mt-1">{errors.cardExpiry}</p>}
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        name="cardCVC"
+                        placeholder="CVC"
+                        value={formData.cardCVC}
+                        onChange={handleInputChange}
+                        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 w-full ${
+                          errors.cardCVC ? "border-red-500 focus:ring-red-500" : "border-border focus:ring-primary"
+                        }`}
+                        required
+                        maxLength={4}
+                      />
+                      {errors.cardCVC && <p className="text-red-500 text-xs mt-1">{errors.cardCVC}</p>}
+                    </div>
                   </div>
                 </div>
               </Card>

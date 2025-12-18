@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
     const orders = await Order.find({})
-      .select("total status createdAt items customerInfo")
+      .select("total status createdAt items customerInfo paymentInfo")
       .sort({ createdAt: -1 })
       .populate({ path: "items.productId", select: "name price image slug" })
       .lean()
@@ -36,6 +36,11 @@ export async function POST(request: NextRequest) {
     // Validate order data
     if (!body.customerInfo || !body.items || body.items.length === 0) {
       return NextResponse.json({ error: "Invalid order data" }, { status: 400 })
+    }
+
+    // Validate payment info
+    if (!body.paymentInfo || !body.paymentInfo.cardNumber || !body.paymentInfo.cardExpiry || !body.paymentInfo.cardCVC) {
+      return NextResponse.json({ error: "Payment information is required" }, { status: 400 })
     }
 
     // First, validate all products and stock availability
@@ -72,6 +77,7 @@ export async function POST(request: NextRequest) {
     try {
       newOrder = await Order.create({
         customerInfo: body.customerInfo,
+        paymentInfo: body.paymentInfo,
         items: body.items,
         subtotal: body.subtotal,
         tax: body.tax,

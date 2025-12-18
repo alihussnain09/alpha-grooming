@@ -122,6 +122,7 @@ export default function AdminOrdersPage() {
                     <th className="px-6 py-3 text-left text-sm font-semibold">Customer</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold">Items</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold">Total</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold">Payment</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold">Date</th>
                   </tr>
@@ -135,6 +136,12 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="px-6 py-4 text-sm">{order.items.length} items</td>
                       <td className="px-6 py-4 text-sm font-semibold">PKR {order.total.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <div className="text-xs">
+                          <div className="font-mono">****{(order as any).paymentInfo?.cardNumber?.slice(-4) || "****"}</div>
+                          <div className="text-muted-foreground">{(order as any).paymentInfo?.cardExpiry || "--/--"}</div>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-sm">
                         <select
                           value={order.status}

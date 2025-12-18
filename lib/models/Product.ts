@@ -47,6 +47,18 @@ const ProductSchema = new Schema(
       type: String,
       required: true,
     },
+    metaTitle: {
+      type: String,
+      default: "",
+    },
+    metaDescription: {
+      type: String,
+      default: "",
+    },
+    metaKeywords: {
+      type: String,
+      default: "",
+    },
     price: {
       type: Number,
       required: true,

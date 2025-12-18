@@ -192,7 +192,10 @@ export default function ProductDetailPage() {
               <span className="text-sm text-muted-foreground">({product.reviews} reviews)</span>
             </div>
 
-            <p className="text-lg text-muted-foreground mb-6">{product.description}</p>
+            <div 
+              className="text-lg text-muted-foreground mb-6 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
 
             {/* Price */}
             <div className="mb-6">
