@@ -4,13 +4,20 @@ import { connectDB } from "@/lib/mongodb"
 import Order from "@/lib/models/Order"
 import Product from "@/lib/models/Product"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-})
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
-
 export async function POST(request: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json(
+      { error: "Stripe configuration missing" },
+      { status: 500 }
+    )
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-02-24.acacia",
+  })
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
   const body = await request.text()
   const signature = request.headers.get("stripe-signature")!
 
