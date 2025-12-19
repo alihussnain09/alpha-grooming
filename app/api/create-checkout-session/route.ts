@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2025-02-24.acacia",
 })
 
 export async function POST(request: NextRequest) {
@@ -35,14 +35,14 @@ export async function POST(request: NextRequest) {
 
     // Add shipping if applicable
     const subtotal = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
-    if (subtotal <= 10000) {
+    if (subtotal < 2000) {
       lineItems.push({
         price_data: {
           currency: "pkr",
           product_data: {
             name: "Shipping Fee",
           },
-          unit_amount: 30000, // PKR 300 in cents
+          unit_amount: 20000, // PKR 200 in cents
         },
         quantity: 1,
       })
