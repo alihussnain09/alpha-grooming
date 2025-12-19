@@ -43,11 +43,11 @@ export async function POST(request: NextRequest) {
       // Get line items from the session
       const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
 
-      // Prepare order items
+      // Prepare order items (store Stripe product ID in metadata, we'll skip stock updates)
       const items = lineItems.data
         .filter((item) => item.description !== "Shipping Fee")
         .map((item) => ({
-          productId: item.price?.product as string,
+          productId: item.price?.product as string, // This is Stripe product ID
           name: item.description || "",
           quantity: item.quantity || 1,
           price: (item.amount_total || 0) / 100,
@@ -72,12 +72,8 @@ export async function POST(request: NextRequest) {
         status: "pending",
       })
 
-      // Update product stock
-      for (const item of items) {
-        await Product.findByIdAndUpdate(item.productId, {
-          $inc: { stock: -item.quantity },
-        })
-      }
+      // Stock updates removed - Stripe product IDs don't match MongoDB IDs
+      // You would need to pass MongoDB product IDs in metadata to update stock
 
       console.log("Order created successfully:", order._id)
     } catch (error) {
