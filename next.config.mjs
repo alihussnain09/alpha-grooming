@@ -9,8 +9,6 @@ const nextConfig = {
     unoptimized: false,
     // Supported image formats - Next.js will auto-convert to WebP
     formats: ['image/webp', 'image/avif'],
-    // Default quality
-    quality: 75,
     // Remote patterns for external images
     remotePatterns: [
       {
@@ -33,8 +31,6 @@ const nextConfig = {
   reactStrictMode: true,
   // Production source maps (set to false for production)
   productionBrowserSourceMaps: false,
-  // Optimize bundle size
-  swcMinify: true,
   // Compiler optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
