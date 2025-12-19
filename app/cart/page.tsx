@@ -177,7 +177,7 @@ export default function CartPage() {
               <div className="border-t border-border pt-4 mb-6">
                 <div className="flex justify-between">
                   <span className="font-bold text-lg">Total</span>
-                  <span className="font-bold text-lg text-primary">PKR {Math.round(total).toLocaleString()}</span></span>
+                  <span className="font-bold text-lg text-primary">PKR {Math.round(total).toLocaleString()}</span>
                 </div>
               </div>
 
