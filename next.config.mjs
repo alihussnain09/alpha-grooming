@@ -3,11 +3,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  poweredByHeader: false,
   images: {
     // Enable image optimization
     unoptimized: false,
     // Supported image formats - Next.js will auto-convert to WebP
     formats: ['image/webp', 'image/avif'],
+    // Default quality
+    quality: 75,
     // Remote patterns for external images
     remotePatterns: [
       {
@@ -20,6 +23,9 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
     // Minimize layout shift
     minimumCacheTTL: 31536000,
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   // Compress output
   compress: true,
@@ -27,12 +33,29 @@ const nextConfig = {
   reactStrictMode: true,
   // Production source maps (set to false for production)
   productionBrowserSourceMaps: false,
+  // Optimize bundle size
+  swcMinify: true,
+  // Compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
   // Experimental optimizations
   experimental: {
     // Optimize CSS
     optimizeCss: true,
     // Optimize package imports
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', '@stripe/stripe-js'],
+    optimizePackageImports: [
+      'lucide-react', 
+      '@radix-ui/react-icons', 
+      '@stripe/stripe-js', 
+      '@vercel/analytics',
+      'mongoose',
+      'stripe'
+    ],
+    // Use Server Components by default
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
   // Headers for better caching and security
   async headers() {

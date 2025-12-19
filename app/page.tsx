@@ -12,10 +12,9 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-[500px] bg-gradient-to-br from-primary/20 via-primary/10 to-background overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+      <section className="relative min-h-[500px] bg-gradient-to-br from-primary/20 via-primary/10 to-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center py-20">
-          <div className="flex-1 relative z-10">
+          <div className="flex-1">
             <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-6">
               🇵🇰 Made in Pakistan
             </span>
@@ -94,10 +93,10 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+      <section className="py-20 bg-primary text-primary-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Join Our Community</h2>
-          <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">Get grooming tips, product recommendations, and exclusive offers. Be the first to know about new arrivals!</p>
+          <p className="text-lg mb-8 max-w-2xl mx-auto">Get grooming tips, product recommendations, and exclusive offers. Be the first to know about new arrivals!</p>
           <Link href="/guides">
             <Button variant="secondary" size="lg" className="px-8">
               Read Grooming Guides

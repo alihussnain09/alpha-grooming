@@ -35,10 +35,11 @@ export const ProductCard = memo(function ProductCard({ product, priority = false
             src={product.image || "/placeholder.svg"}
             alt={product.name}
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover hover:scale-105 transition-transform"
             priority={priority}
             loading={priority ? "eager" : "lazy"}
+            quality={75}
           />
         </div>
       </Link>

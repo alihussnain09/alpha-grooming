@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import type { Product } from "@/lib/types"
 import { Navbar } from "@/components/navbar"
 import { ProductCard } from "@/components/product-card"
@@ -14,14 +14,13 @@ import { generateSlug } from "@/lib/utils"
 export default function ProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [priceRange, setPriceRange] = useState([0, 10000])
   const [sortBy, setSortBy] = useState("featured")
   const [loading, setLoading] = useState(true)
 
-  const categories = ["Beard Care", "Face Care", "Hair Care"]
+  const categories = useMemo(() => ["Beard Care", "Face Care", "Hair Care"], [])
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -47,7 +46,7 @@ export default function ProductsPage() {
     fetchProducts()
   }, [])
 
-  useEffect(() => {
+  const filteredProducts = useMemo(() => {
     let filtered = products
 
     if (searchTerm) {
@@ -74,7 +73,7 @@ export default function ProductsPage() {
       filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
 
-    setFilteredProducts(filtered)
+    return filtered
   }, [products, searchTerm, selectedCategory, priceRange, sortBy])
 
   return (

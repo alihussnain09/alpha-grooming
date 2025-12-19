@@ -1,13 +1,20 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
+import Script from 'next/script'
+import dynamic from 'next/dynamic'
 import './globals.css'
+
+const Analytics = dynamic(() => import('@vercel/analytics/react').then(mod => ({ default: mod.Analytics })), {
+  ssr: false,
+})
 
 const geist = Geist({ 
   subsets: ["latin"],
   display: 'swap',
   preload: true,
   variable: '--font-geist',
+  fallback: ['system-ui', 'arial'],
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
@@ -84,11 +91,29 @@ export default function RootLayout({
   return (
     <html lang="en" className={geist.variable}>
       <head>
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://vitals.vercel-insights.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://vitals.vercel-insights.com" />
         <meta name="theme-color" content="#000000" />
       </head>
       <body className={`${geist.className} antialiased`}>
+        <Script
+          strategy="lazyOnload"
+          src="https://www.googletagmanager.com/gtag/js?id=G-V7RK7C4Z7R"
+        />
+        <Script
+          id="google-analytics"
+          strategy="lazyOnload"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-V7RK7C4Z7R');
+            `,
+          }}
+        />
         {children}
         <Analytics />
       </body>
