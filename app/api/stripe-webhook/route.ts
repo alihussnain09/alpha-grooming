@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
+import mongoose from "mongoose"
 import { connectDB } from "@/lib/mongodb"
 import Order from "@/lib/models/Order"
 import Product from "@/lib/models/Product"
@@ -43,37 +44,67 @@ export async function POST(request: NextRequest) {
       // Get line items from the session
       const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
 
-      // Prepare order items (store Stripe product ID in metadata, we'll skip stock updates)
+      // Calculate amounts
+      const subtotal = (session.amount_subtotal || 0) / 100
+      const total = (session.amount_total || 0) / 100
+      const shipping = subtotal >= 2000 ? 0 : 200 // Free shipping over PKR 2000
+      const tax = subtotal * 0.05 // 5% tax
+
+      // Prepare order items - use product name instead of ID since Stripe IDs don't match MongoDB
       const items = lineItems.data
         .filter((item) => item.description !== "Shipping Fee")
-        .map((item) => ({
-          productId: item.price?.product as string, // This is Stripe product ID
-          name: item.description || "",
-          quantity: item.quantity || 1,
-          price: (item.amount_total || 0) / 100,
-        }))
+        .map((item) => {
+          // Find matching product in DB by name
+          return {
+            name: item.description || "",
+            quantity: item.quantity || 1,
+            price: (item.amount_total || 0) / 100 / (item.quantity || 1), // Unit price
+          }
+        })
+
+      // Get product IDs from MongoDB by matching names
+      const productNames = items.map(item => item.name)
+      const dbProducts = await Product.find({ name: { $in: productNames } })
+      
+      // Map items with actual MongoDB product IDs
+      const orderItems = items.map(item => {
+        const dbProduct = dbProducts.find(p => p.name === item.name)
+        return {
+          productId: dbProduct?._id || new mongoose.Types.ObjectId(), // Use found ID or create new one
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        }
+      })
+
+      // Parse customer name
+      const fullName = session.metadata?.customerName || ""
+      const nameParts = fullName.split(" ")
+      const firstName = nameParts[0] || ""
+      const lastName = nameParts.slice(1).join(" ") || ""
 
       // Create order in database
       const order = await Order.create({
-        customerName: session.metadata?.customerName || "",
-        customerEmail: session.customer_email || "",
-        customerPhone: session.metadata?.phone || "",
-        shippingAddress: {
+        customerInfo: {
+          firstName,
+          lastName,
+          email: session.customer_email || "",
+          phone: session.metadata?.phone || "",
           address: session.metadata?.address || "",
           city: session.metadata?.city || "",
           state: session.metadata?.state || "",
           zipCode: session.metadata?.zipCode || "",
         },
-        items,
-        totalAmount: (session.amount_total || 0) / 100,
+        items: orderItems,
+        subtotal,
+        tax,
+        shipping,
+        total,
         paymentStatus: "paid",
         paymentMethod: "stripe",
         stripeSessionId: session.id,
         status: "pending",
       })
-
-      // Stock updates removed - Stripe product IDs don't match MongoDB IDs
-      // You would need to pass MongoDB product IDs in metadata to update stock
 
       console.log("Order created successfully:", order._id)
     } catch (error) {
